@@ -10,6 +10,7 @@
 #include "helpers.h"
 #include "json.hpp"
 #include "MPC.h"
+#include "constants.h"
 
 // for convenience
 using nlohmann::json;
@@ -47,13 +48,47 @@ int main() {
           double py = j[1]["y"];
           double psi = j[1]["psi"];
           double v = j[1]["speed"];
+          double delta= j[1]["steering_angle"];
+          double a = j[1]["throttle"];
 
           /**
            * TODO: Calculate steering angle and throttle using MPC.
            * Both are in between [-1, 1].
            */
-          double steer_value;
-          double throttle_value;
+
+          // 1, transform the map coordiate to vehicle coordiate
+          size_t n_waypoints = ptsx.size();
+          auto ptsx_vehicle_coor = Eigen::VectorXd(n_waypoints);
+          auto ptsy_vehicle_coor = Eigen::VectorXd(n_waypoints);
+          for (int i = 0; i < n_waypoints; i++){
+            double dx = ptsx[i] - px;
+            double dy = ptsy[i] - py;
+            ptsx_vehicle_coor[i] = dx * cos(-psi) - dy * sin(-psi);
+            ptsy_vehicle_coor[i] = dx * sin(-psi) + dy * cos(-psi);
+          }
+
+          // 2, fit polynomial for y=f(x) 3rd order
+          auto coeffs = polyfit(ptsx_vehicle_coor, ptsy_vehicle_coor, 3);
+
+          // 3, MPC
+
+          // Initial state considering latency
+          double x0 = 0 + (v * cos(0) * delay);
+          double y0 = 0 + (v * sin(0) * delay);
+          double psi0 = 0 - (v * delta * delay /Lf);
+          double v0 = v + a * delay;
+          double cte0 = coeffs[0] + (v * sin(-atan(coeffs[1])) * delay / Lf);
+          double epsi0 = -atan(coeffs[1]) - (v * atan(coeffs[1] * delay / Lf));
+          
+          // Define the state vector.
+          Eigen::VectorXd state(6);
+          state << x0, y0, psi0, v0, cte0, epsi0;
+
+          // Find the MPC solution.
+          auto vars = mpc.Solve(state, coeffs);
+
+          double steer_value = vars[0]/deg2rad(25);
+          double throttle_value = vars[1];       
 
           json msgJson;
           // NOTE: Remember to divide by deg2rad(25) before you send the 
