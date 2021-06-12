@@ -34,7 +34,7 @@ int main() {
     // The 4 signifies a websocket message
     // The 2 signifies a websocket event
     string sdata = string(data).substr(0, length);
-    std::cout << sdata << std::endl;
+    // std::cout << sdata << std::endl;
     if (sdata.size() > 2 && sdata[0] == '4' && sdata[1] == '2') {
       string s = hasData(sdata);
       if (s != "") {
@@ -63,8 +63,8 @@ int main() {
           for (int i = 0; i < n_waypoints; i++){
             double dx = ptsx[i] - px;
             double dy = ptsy[i] - py;
-            ptsx_vehicle_coor[i] = dx * cos(-psi) - dy * sin(-psi);
-            ptsy_vehicle_coor[i] = dx * sin(-psi) + dy * cos(-psi);
+            ptsx_vehicle_coor(i) = dx * cos(- psi) - dy * sin(- psi);
+            ptsy_vehicle_coor(i) = dx * sin(- psi) + dy * cos(- psi);
           }
 
           // 2, fit polynomial for y=f(x) 3rd order
@@ -77,9 +77,10 @@ int main() {
           double y0 = 0 + (v * sin(0) * delay);
           double psi0 = 0 - (v * delta * delay /Lf);
           double v0 = v + a * delay;
-          double cte0 = coeffs[0] + (v * sin(-atan(coeffs[1])) * delay / Lf);
-          double epsi0 = -atan(coeffs[1]) - (v * atan(coeffs[1] * delay / Lf));
+          double cte0 = coeffs[0] + (v * sin(- atan(coeffs[1])) * delay );
+          double epsi0 = - atan(coeffs[1]) - (v * atan(coeffs[1] * delay / Lf));
           
+
           // Define the state vector.
           Eigen::VectorXd state(6);
           state << x0, y0, psi0, v0, cte0, epsi0;
@@ -106,6 +107,13 @@ int main() {
            *   the vehicle's coordinate system the points in the simulator are 
            *   connected by a Green line
            */
+          for ( int i = 2; i < vars.size(); i++ ) {
+            if ( i % 2 == 0 ) {
+              mpc_x_vals.push_back( vars[i] );
+            } else {
+              mpc_y_vals.push_back( vars[i] );
+            }
+          }
 
           msgJson["mpc_x"] = mpc_x_vals;
           msgJson["mpc_y"] = mpc_y_vals;
@@ -119,13 +127,20 @@ int main() {
            *   the vehicle's coordinate system the points in the simulator are 
            *   connected by a Yellow line
            */
+          double poly_inc = 2.5;
+          int num_points = 25;
+          for ( int i = 0; i < num_points; i++ ) {
+            double x = poly_inc * i;
+            next_x_vals.push_back( x );
+            next_y_vals.push_back( polyeval(coeffs, x) );
+          }          
 
           msgJson["next_x"] = next_x_vals;
           msgJson["next_y"] = next_y_vals;
 
 
           auto msg = "42[\"steer\"," + msgJson.dump() + "]";
-          std::cout << msg << std::endl;
+          // std::cout << msg << std::endl;
           // Latency
           // The purpose is to mimic real driving conditions where
           //   the car does actuate the commands instantly.
@@ -144,6 +159,8 @@ int main() {
       }
     }  // end websocket if
   }); // end h.onMessage
+
+
 
   h.onConnection([&h](uWS::WebSocket<uWS::SERVER> ws, uWS::HttpRequest req) {
     std::cout << "Connected!!!" << std::endl;
