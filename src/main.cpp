@@ -80,7 +80,13 @@ int main() {
           double cte0 = coeffs[0] + (v * sin(- atan(coeffs[1])) * delay );
           double epsi0 = - atan(coeffs[1]) - (v * atan(coeffs[1] * delay / Lf));
           
-
+          // double x0 = 0 ;
+          // double y0 = 0 ;
+          // double psi0 = 0 ;
+          // double v0 = v;
+          // double cte0 = coeffs[0] ;
+          // double epsi0 = - atan(coeffs[1]) ;
+          
           // Define the state vector.
           Eigen::VectorXd state(6);
           state << x0, y0, psi0, v0, cte0, epsi0;

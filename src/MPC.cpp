@@ -21,7 +21,7 @@ double dt = 0.1;
 
 const double ref_cte = 0;
 const double ref_epsi = 0;
-const double ref_v = 100;
+const double ref_v = 70;
 
 const size_t x_start = 0;
 const size_t y_start = x_start + N;
@@ -182,8 +182,8 @@ std::vector<double> MPC::Solve(const VectorXd &state, const VectorXd &coeffs) {
   // The upper and lower limits of delta are set to -25 to 25
   // degrees (values in radians).
   for ( int i = delta_start; i < a_start; i++ ) {
-    vars_lowerbound[i] = -0.436332*Lf;
-    vars_upperbound[i] = 0.43632*Lf;
+    vars_lowerbound[i] = -0.436332;
+    vars_upperbound[i] = 0.43632;
   }
 
   // Actuator limits.
